@@ -3,10 +3,10 @@
 
 
 import numpy as np
-try:
+import contextlib
+
+with contextlib.suppress(Exception):
     from matplotlib import pyplot as pb
-except:
-    pass
 
 
 def univariate_plot(prior):
@@ -14,13 +14,13 @@ def univariate_plot(prior):
     pb.hist(rvs, 100, density=True)
     xmin, xmax = pb.xlim()
     xx = np.linspace(xmin, xmax, 1000)
-    pb.plot(xx, prior.pdf(xx), 'r', linewidth=2)
+    pb.plot(xx, prior.pdf(xx), "r", linewidth=2)
+
 
 def plot(prior):
-
     if prior.input_dim == 2:
         rvs = prior.rvs(200)
-        pb.plot(rvs[:, 0], rvs[:, 1], 'kx', mew=1.5)
+        pb.plot(rvs[:, 0], rvs[:, 1], "kx", mew=1.5)
         xmin, xmax = pb.xlim()
         ymin, ymax = pb.ylim()
         xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]

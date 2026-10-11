@@ -5,16 +5,15 @@ Global variables: initSuccess
 providing CUBLAS handle: cublas_handle
 """
 
+import contextlib
+
 gpu_initialized = False
 gpu_device = None
 gpu_context = None
 MPI_enabled = False
 
-try:
-    import pycuda.autoinit
+with contextlib.suppress(Exception):
     gpu_initialized = True
-except:
-    pass
 
 # def initGPU():
 #     try:
@@ -39,7 +38,8 @@ except:
 #             gpu_initialized = True
 #     except:
 #         pass
-    
+
+
 def closeGPU():
     if gpu_context is not None:
         gpu_context.detach()

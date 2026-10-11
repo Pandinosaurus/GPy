@@ -63,9 +63,7 @@ def student_t_approx(optimize=True, plot=True):
     # Student t GP model on clean data
     t_distribution = GPy.likelihoods.StudentT(deg_free=deg_free, sigma2=edited_real_sd)
     laplace_inf = GPy.inference.latent_function_inference.Laplace()
-    m3 = GPy.core.GP(
-        X, Y.copy(), kernel3, likelihood=t_distribution, inference_method=laplace_inf
-    )
+    m3 = GPy.core.GP(X, Y.copy(), kernel3, likelihood=t_distribution, inference_method=laplace_inf)
     m3[".*t_scale2"].constrain_bounded(1e-6, 10.0)
     m3[".*white"].constrain_fixed(1e-5)
     m3.randomize()
@@ -73,9 +71,7 @@ def student_t_approx(optimize=True, plot=True):
     # Student t GP model on corrupt data
     t_distribution = GPy.likelihoods.StudentT(deg_free=deg_free, sigma2=edited_real_sd)
     laplace_inf = GPy.inference.latent_function_inference.Laplace()
-    m4 = GPy.core.GP(
-        X, Yc.copy(), kernel4, likelihood=t_distribution, inference_method=laplace_inf
-    )
+    m4 = GPy.core.GP(X, Yc.copy(), kernel4, likelihood=t_distribution, inference_method=laplace_inf)
     m4[".*t_scale2"].constrain_bounded(1e-6, 10.0)
     m4[".*white"].constrain_fixed(1e-5)
     m4.randomize()
@@ -136,7 +132,6 @@ def student_t_approx(optimize=True, plot=True):
 
 def boston_example(optimize=True, plot=True):
     raise NotImplementedError("Needs updating")
-    import sklearn
     from sklearn.cross_validation import KFold
 
     optimizer = "bfgs"
@@ -156,9 +151,7 @@ def boston_example(optimize=True, plot=True):
     Y = Y / Y.std()
     num_folds = 10
     kf = KFold(len(Y), n_folds=num_folds, indices=True)
-    num_models = (
-        len(degrees_freedoms) + 3
-    )  # 3 for baseline, gaussian, gaussian laplace approx
+    num_models = len(degrees_freedoms) + 3  # 3 for baseline, gaussian, gaussian laplace approx
     score_folds = np.zeros((num_models, num_folds))
     pred_density = score_folds.copy()
 
@@ -167,30 +160,20 @@ def boston_example(optimize=True, plot=True):
 
     for n, (train, test) in enumerate(kf):
         X_train, X_test, Y_train, Y_test = X[train], X[test], Y[train], Y[test]
-        print("Fold {}".format(n))
+        print(f"Fold {n}")
 
         noise = 1e-1  # np.exp(-2)
         rbf_len = 0.5
         data_axis_plot = 4
-        kernelstu = (
-            GPy.kern.RBF(X.shape[1])
-            + GPy.kern.white(X.shape[1])
-            + GPy.kern.bias(X.shape[1])
-        )
-        kernelgp = (
-            GPy.kern.RBF(X.shape[1])
-            + GPy.kern.white(X.shape[1])
-            + GPy.kern.bias(X.shape[1])
-        )
+        kernelstu = GPy.kern.RBF(X.shape[1]) + GPy.kern.white(X.shape[1]) + GPy.kern.bias(X.shape[1])
+        kernelgp = GPy.kern.RBF(X.shape[1]) + GPy.kern.white(X.shape[1]) + GPy.kern.bias(X.shape[1])
 
         # Baseline
         score_folds[0, n] = rmse(Y_test, np.mean(Y_train))
 
         # Gaussian GP
         print("Gauss GP")
-        mgp = GPy.models.GPRegression(
-            X_train.copy(), Y_train.copy(), kernel=kernelgp.copy()
-        )
+        mgp = GPy.models.GPRegression(X_train.copy(), Y_train.copy(), kernel=kernelgp.copy())
         mgp.constrain_fixed(".*white", 1e-5)
         mgp[".*len"] = rbf_len
         mgp[".*noise"] = noise
@@ -205,9 +188,7 @@ def boston_example(optimize=True, plot=True):
 
         print("Gaussian Laplace GP")
         N, D = Y_train.shape
-        g_distribution = GPy.likelihoods.noise_model_constructors.gaussian(
-            variance=noise, N=N, D=D
-        )
+        g_distribution = GPy.likelihoods.noise_model_constructors.gaussian(variance=noise, N=N, D=D)
         g_likelihood = GPy.likelihoods.Laplace(Y_train.copy(), g_distribution)
         mg = GPy.models.GPRegression(
             X_train.copy(),
@@ -230,10 +211,8 @@ def boston_example(optimize=True, plot=True):
 
         for stu_num, df in enumerate(degrees_freedoms):
             # Student T
-            print("Student-T GP {}df".format(df))
-            t_distribution = GPy.likelihoods.noise_model_constructors.student_t(
-                deg_free=df, sigma2=noise
-            )
+            print(f"Student-t GP {df}df")
+            t_distribution = GPy.likelihoods.noise_model_constructors.student_t(deg_free=df, sigma2=noise)
             stu_t_likelihood = GPy.likelihoods.Laplace(Y_train.copy(), t_distribution)
             mstu_t = GPy.models.GPRegression(
                 X_train.copy(),
@@ -250,9 +229,7 @@ def boston_example(optimize=True, plot=True):
                 mstu_t.optimize(optimizer=optimizer, messages=messages)
             Y_test_pred = mstu_t.predict(X_test)
             score_folds[3 + stu_num, n] = rmse(Y_test, Y_test_pred[0])
-            pred_density[3 + stu_num, n] = np.mean(
-                mstu_t.log_predictive_density(X_test, Y_test)
-            )
+            pred_density[3 + stu_num, n] = np.mean(mstu_t.log_predictive_density(X_test, Y_test))
             print(pred_density)
             print(mstu_t)
 
@@ -270,14 +247,14 @@ def boston_example(optimize=True, plot=True):
         plt.figure()
         plt.scatter(X_test[:, data_axis_plot], Y_test_pred[0])
         plt.scatter(X_test[:, data_axis_plot], Y_test, c="r", marker="x")
-        plt.title("Stu t {}df".format(df))
+        plt.title(f"Stu t {df}df")
 
-    print("Average scores: {}".format(np.mean(score_folds, 1)))
-    print("Average pred density: {}".format(np.mean(pred_density, 1)))
+    print(f"Average scores: {np.mean(score_folds, 1)}")
+    print(f"Average pred density: {np.mean(pred_density, 1)}")
 
     if MPL_AVAILABLE and plot:
         # Plotting
-        stu_t_legends = ["Student T, df={}".format(df) for df in degrees_freedoms]
+        stu_t_legends = [f"Student T, df={df}" for df in degrees_freedoms]
         legends = ["Baseline", "Gaussian", "Laplace Approx Gaussian"] + stu_t_legends
 
         # Plot boxplots for RMSE density

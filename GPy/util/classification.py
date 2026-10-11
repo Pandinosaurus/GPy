@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def conf_matrix(p, labels, names=["1", "0"], threshold=0.5, show=True):
+def conf_matrix(p, labels, names=None, threshold=0.5, show=True):
     """
     Returns error rate and true/false positives in a binary classification problem
     - Actual classes are displayed by column.
@@ -16,6 +16,8 @@ def conf_matrix(p, labels, names=["1", "0"], threshold=0.5, show=True):
     :param show: whether the matrix should be shown or not
     :type show: False|True
     """
+    if names is None:
+        names = ["1", "0"]
     assert p.size == labels.size, "Arrays p and labels have different dimensions."
     decision = np.ones((labels.size, 1))
     decision[p < threshold] = 0
@@ -27,8 +29,8 @@ def conf_matrix(p, labels, names=["1", "0"], threshold=0.5, show=True):
     error = (false_1 + false_0) / float(labels.size)
     if show:
         print(100.0 - error * 100, "% instances correctly classified")
-        print("%-10s|  %-10s|  %-10s| " % ("", names[0], names[1]))
+        print(f"{'':<10}|  {names[0]:<10}|  {names[1]:<10}| ")
         print("----------|------------|------------|")
-        print("%-10s|  %-10s|  %-10s| " % (names[0], true_1, false_0))
-        print("%-10s|  %-10s|  %-10s| " % (names[1], false_1, true_0))
+        print(f"{names[0]:<10}|  {true_1:<10}|  {false_0:<10}| ")
+        print(f"{names[1]:<10}|  {false_1:<10}|  {true_0:<10}| ")
     return error, true_1, false_1, true_0, false_0
